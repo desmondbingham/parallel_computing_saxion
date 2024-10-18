@@ -13,8 +13,7 @@ public class BuildingConnection {
 
     private final Channel channel;
     String DIRECT_EXCHANGE = "direct_building";
-    String FANOUT_EXCHANGE = "fanout";
-    private static final String AGENCY_NAME= "Agency";
+    String FANOUT_EXCHANGE = "building_broadcast";
     private Building building;
 
 
@@ -23,14 +22,14 @@ public class BuildingConnection {
 
         channel = RabbitMQ.connect();
 
-        String queue = building.getName() + "_" + AGENCY_NAME;
+        String queue = building.getName();
         BuildingResponse buildingResponse = new BuildingResponse(building, channel);
 
-        RabbitMQ.setupDirectExchange(channel, DIRECT_EXCHANGE, building.getName(), "", BuildingResponse::handleResponse);
+        RabbitMQ.setupDirectExchange(channel, DIRECT_EXCHANGE, queue, "", BuildingResponse::handleResponse);
 
         publishToAll(building, "CREATE_BUILDING");
 
-        System.out.println("Building Connected to Exchange. Name: " + building.getName() + ", Rooms: " + building.getTotalRooms() );
+        System.out.println("Building Connected to Exchange. Name: " + queue+ ", Rooms: " + building.getTotalRooms() );
 
         Runtime.getRuntime().addShutdownHook(new Thread(this::deleteBuilding));
     }

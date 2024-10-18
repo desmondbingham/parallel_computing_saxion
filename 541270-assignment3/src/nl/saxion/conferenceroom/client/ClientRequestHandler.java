@@ -10,7 +10,7 @@ import java.util.Scanner;
 public class ClientRequestHandler {
 
     private Scanner s = new Scanner(System.in);
-    private final String AGENCY_EXCHANGE = "client_exchange";
+    private final String SHARED_EXCHANGE = "shared_agent_exchange";  // The exchange for round-robin requests
     private Channel channel;
     private String clientId;
 
@@ -19,7 +19,7 @@ public class ClientRequestHandler {
         this.clientId = clientId;
     }
 
-    public  void startMenuLoop() {
+    public void startMenuLoop() {
         String option = "";
         while (!option.equals("0")) {
             printMenuOptions();
@@ -58,7 +58,7 @@ public class ClientRequestHandler {
     public void handleRequestRoom() {
         String buildingName = getInput("Enter the name of the building:");
         String numRooms = getInput("How many rooms would you like to reserve?");
-        String messageBody = String.format(buildingName +" " + numRooms);
+        String messageBody = String.format(buildingName + " " + numRooms);
 
         Message message = createMessage(clientId, "REQUEST_RESERVATION", messageBody);
         sendRequestToAgent(message);
@@ -77,25 +77,26 @@ public class ClientRequestHandler {
         Message message = createMessage(clientId, "REQUEST_CONFIRM", buildingName + " " + reservationId);
         sendRequestToAgent(message);
     }
-    private  String getInput(String prompt) {
+
+    private String getInput(String prompt) {
         System.out.println(prompt);
         return s.nextLine().trim();
     }
 
     private Message createMessage(String clientId, String requestType, String body) {
-        return new Message(clientId, AGENCY_EXCHANGE, requestType, body);
+        // The receiver here can be a placeholder like "AGENCY" since we are using round-robin distribution
+        return new Message(clientId, "AGENCY", requestType, body);
     }
 
-    public  void sendRequestToAgent(Message message) {
+    public void sendRequestToAgent(Message message) {
         try {
             byte[] bytes = JSONUtils.toJSONBytes(message);
-            channel.basicPublish(AGENCY_EXCHANGE, "", null, bytes);
+            // Publish the message to the shared exchange for round-robin delivery
+            channel.basicPublish(SHARED_EXCHANGE, "", null, bytes);  // Empty routing key for round-robin
 
             System.out.println("Request sent: " + message);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
     }
-
-
 }

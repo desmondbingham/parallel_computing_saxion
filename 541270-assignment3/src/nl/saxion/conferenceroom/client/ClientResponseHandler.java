@@ -18,6 +18,9 @@ public class ClientResponseHandler {
                 break;
             case "REQUEST_RESERVATION_RESPONSE":
                 System.out.println("Room reservation result: " + response.body());
+                if(response.body().contains("does not exist")){
+                    break;
+                }
                 String[] parts = response.body().split(" ");
                 ReservationManager.getInstance().addReservation(parts[5], parts[3]);
                 break;
